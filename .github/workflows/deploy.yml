@@ -1,0 +1,52 @@
+name: Publish Gem
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Ruby ${{ matrix.ruby }}
+    strategy:
+      matrix:
+        ruby:
+          - '3.1'
+          - '3.0'
+          - '2.7'
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby }}
+        bundler-cache: true
+    - name: Run the default task
+      run: bundle exec rake spec
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.1
+          bundler-cache: true
+      - name: Setup release credentials
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        run: |
+          mkdir -p $HOME/.gem
+          touch $HOME/.gem/credentials
+          chmod 600 $HOME/.gem/credentials
+          echo "---" > $HOME/.gem/credentials
+          echo ":github: Bearer ${GITHUB_TOKEN}" >> $HOME/.gem/credentials
+          bundle config set --global gem.push_key github
+      - name: Build
+        run: bundle exec rake build
+      - name: publish
+        run: bundle exec rake release
