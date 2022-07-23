@@ -2,7 +2,8 @@
 
 require_relative "jwk/version"
 
-module Jwk
+module JWK
   class Error < StandardError; end
-  # Your code goes here...
+
+  autoload :Google, 'jwk/google'
 end
